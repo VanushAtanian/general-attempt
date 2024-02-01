@@ -1,0 +1,131 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: general-attempt
+  title: General Attempt
+  description: General Attemmpt
+  tags:
+    - workflow
+    - secrets
+    - demo
+    - general
+spec:
+  owner: service@example.com
+  type: service
+
+  parameters:
+    - title: Provide some simple information
+      required:
+        - map
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+      properties:
+        map:
+          title: url map
+          type: string
+          description: Value To adreess with
+
+        AWS_ACCESS_KEY_ID:
+          title: aws access key
+          type: string
+          description: aws access key
+
+        AWS_SECRET_ACCESS_KEY:
+          title: aws secret key
+          type: string
+          description: aws secret key
+
+        key1:
+          title: Some Key
+          type: string
+          description: Some Key To Insert
+          default: key_placeholder
+
+        value1:
+          title: Some Value
+          type: string
+          description: Some Value To Insert
+          default: value_placeholder
+
+        key2:
+          title: Some Key
+          type: string
+          description: Some Key To Insert
+          default: key_placeholder
+
+        value2:
+          title: Some Value
+          type: string
+          description: Some Value To Insert
+          default: value_placeholder
+
+        key3:
+          title: Some Key
+          type: string
+          description: Some Key To Insert
+          default: key_placeholder
+
+        value3:
+          title: Some Value
+          type: string
+          description: Some Value To Insert
+          default: value_placeholder
+
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+    - id: template
+      name: Fetch Skeleton + Template
+      action: fetch:template
+      input:
+        url: ./skeleton
+        copyWithoutTemplating:
+          - .github/workflows/*
+        values:
+          map: ${{parameters.map}}
+          key1: ${{parameters.key1}}
+          value1: ${{parameters.value1}}
+          key2: ${{parameters.key2}}
+          value2: ${{parameters.value2}}
+          key3: ${{parameters.key3}}
+          value3: ${{parameters.value3}}
+
+    - id: cretae
+      name: Create Repo And Insert Secrets
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        owner: 
+        secrets:
+          AWS_ACCESS_KEY_ID: ${{parameters.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{parameters.AWS_SECRET_ACCESS_KEY}}
+
+    - id: push
+      name: Fill With Content Already Created Repo
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+
+    - id: trigerring
+      name: Trigger Workflows
+      action: github:actions:dispatch
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        workflowId: main.yaml
+        branchOrTagName: master
+
+    - id: register
+      name: Register
+      action: debug:log
+      input:
+        message: ${{ steps['publish'].output.remoteUrl }}
